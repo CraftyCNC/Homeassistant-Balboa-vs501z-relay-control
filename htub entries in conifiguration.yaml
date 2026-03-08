@@ -1,0 +1,38 @@
+
+
+
+
+
+
+template:
+
+  - binary_sensor:
+      - name: "Hot Tub Heater Active"
+        unique_id: hot_tub_heater_active_template
+        device_class: heat
+        icon: mdi:fire
+        state: >
+          {% set power = states('sensor.gen3_vue_power_minute_average_3') %}
+          {{ power not in ['unavailable', 'unknown', 'none'] and power | float(0) > 3000 }}
+
+  - sensor:
+      - name: "Hot Tub Mode"
+        unique_id: hot_tub_mode_display
+        icon: >
+          {% set mode = states('input_select.hot_tub_mode') %}
+          {% if mode == 'Sleep' %} mdi:sleep
+          {% elif mode == 'Eco' %} mdi:leaf
+          {% else %} mdi:hot-tub
+          {% endif %}
+        state: "{{ states('input_select.hot_tub_mode') }}"
+
+      - name: "Hot Tub Setpoint"
+        unique_id: hot_tub_setpoint_display
+        unit_of_measurement: "°F"
+        state: "{{ states('input_number.hot_tub_setpoint') | int }}"
+        icon: >
+          {% set state = states('input_select.hot_tub_temp_state') %}
+          {% if state == 'up' %} mdi:thermometer-chevron-up
+          {% elif state == 'down' %} mdi:thermometer-chevron-down
+          {% else %} mdi:thermometer-water
+          {% endif %}

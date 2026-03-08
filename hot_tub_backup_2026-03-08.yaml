@@ -1,0 +1,512 @@
+# ============================================================
+# HOT TUB CONTROLS - HOME ASSISTANT BACKUP
+# Generated: 2026-03-08
+# ============================================================
+# Sections:
+#   1. Automations
+#   2. Helpers (input_boolean, input_button, input_number,
+#               input_select, timer)
+#   3. Device Entities (HotTub Relay Control + Sensors)
+# ============================================================
+
+
+# ============================================================
+# 1. AUTOMATIONS
+# ============================================================
+
+automation:
+
+  # ----------------------------------------------------------
+  - id: "1772851499827"
+    alias: "Hot Tub - Relay Control from Buttons"
+    description: "Fires the corresponding relay switch when a hot tub button helper is toggled"
+    mode: parallel
+    max: 5
+    triggers:
+      - platform: state
+        entity_id: input_boolean.hot_tub_pump_1
+        id: pump1
+      - platform: state
+        entity_id: input_boolean.hot_tub_pump_2
+        id: pump2
+      - platform: state
+        entity_id: input_boolean.hot_tub_light
+        id: light
+      - platform: state
+        entity_id: input_button.hot_tub_temp_button
+        id: temp
+      - platform: state
+        entity_id: input_boolean.hot_tub_mode_change
+        id: mode
+    actions:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: pump1
+            sequence:
+              - target:
+                  entity_id: switch.hottub_relay_control_pump_1
+                action: switch.turn_on
+          - conditions:
+              - condition: trigger
+                id: pump2
+            sequence:
+              - target:
+                  entity_id: switch.hottub_relay_control_pump_2
+                action: switch.turn_on
+          - conditions:
+              - condition: trigger
+                id: light
+            sequence:
+              - target:
+                  entity_id: switch.hottub_relay_control_light
+                action: switch.turn_on
+          - conditions:
+              - condition: trigger
+                id: temp
+            sequence:
+              - target:
+                  entity_id: switch.hottub_relay_control_temp
+                action: switch.turn_on
+          - conditions:
+              - condition: trigger
+                id: mode
+            sequence:
+              - target:
+                  entity_id: switch.hottub_relay_control_mode_change
+                action: switch.turn_on
+
+  # ----------------------------------------------------------
+  - id: "1772852749669"
+    alias: "Hot Tub - Cycle Mode on Button Press"
+    description: "Each time the Mode Change button is toggled, advance the mode: Standard -> Eco -> Sleep -> Standard"
+    mode: single
+    triggers:
+      - platform: state
+        entity_id: input_boolean.hot_tub_mode_change
+    actions:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_select.hot_tub_mode
+                state: Standard
+            sequence:
+              - target:
+                  entity_id: input_select.hot_tub_mode
+                data:
+                  option: Eco
+                action: input_select.select_option
+          - conditions:
+              - condition: state
+                entity_id: input_select.hot_tub_mode
+                state: Eco
+            sequence:
+              - target:
+                  entity_id: input_select.hot_tub_mode
+                data:
+                  option: Sleep
+                action: input_select.select_option
+          - conditions:
+              - condition: state
+                entity_id: input_select.hot_tub_mode
+                state: Sleep
+            sequence:
+              - target:
+                  entity_id: input_select.hot_tub_mode
+                data:
+                  option: Standard
+                action: input_select.select_option
+
+  # ----------------------------------------------------------
+  - id: "1772853405519"
+    alias: "Hot Tub - Temperature Setpoint Control"
+    description: >
+      idle -> first press -> up mode (no increment). Subsequent presses increment.
+      Timer expires -> down_ready. First press from down_ready -> down mode (no decrement).
+      Subsequent presses decrement. Timer expires -> idle.
+      At min (80) or max (104), direction reverses on next press.
+    mode: queued
+    max: 2
+    triggers:
+      - platform: state
+        entity_id: input_button.hot_tub_temp_button
+        id: button_press
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.hot_tub_temp_timer
+        id: timer_expired
+    actions:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: button_press
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: idle
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.hot_tub_temp_state
+                data:
+                  option: up
+              - action: timer.start
+                target:
+                  entity_id: timer.hot_tub_temp_timer
+          - conditions:
+              - condition: trigger
+                id: button_press
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: up
+              - condition: numeric_state
+                entity_id: input_number.hot_tub_setpoint
+                above: 103
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.hot_tub_temp_state
+                data:
+                  option: down
+              - action: input_number.decrement
+                target:
+                  entity_id: input_number.hot_tub_setpoint
+              - action: timer.start
+                target:
+                  entity_id: timer.hot_tub_temp_timer
+          - conditions:
+              - condition: trigger
+                id: button_press
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: up
+            sequence:
+              - action: input_number.increment
+                target:
+                  entity_id: input_number.hot_tub_setpoint
+              - action: timer.start
+                target:
+                  entity_id: timer.hot_tub_temp_timer
+          - conditions:
+              - condition: trigger
+                id: timer_expired
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: up
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.hot_tub_temp_state
+                data:
+                  option: down_ready
+          - conditions:
+              - condition: trigger
+                id: button_press
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: down_ready
+              - condition: numeric_state
+                entity_id: input_number.hot_tub_setpoint
+                below: 81
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.hot_tub_temp_state
+                data:
+                  option: up
+              - action: timer.start
+                target:
+                  entity_id: timer.hot_tub_temp_timer
+          - conditions:
+              - condition: trigger
+                id: button_press
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: down_ready
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.hot_tub_temp_state
+                data:
+                  option: down
+              - action: timer.start
+                target:
+                  entity_id: timer.hot_tub_temp_timer
+          - conditions:
+              - condition: trigger
+                id: button_press
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: down
+              - condition: numeric_state
+                entity_id: input_number.hot_tub_setpoint
+                below: 81
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.hot_tub_temp_state
+                data:
+                  option: up
+              - action: input_number.increment
+                target:
+                  entity_id: input_number.hot_tub_setpoint
+              - action: timer.start
+                target:
+                  entity_id: timer.hot_tub_temp_timer
+          - conditions:
+              - condition: trigger
+                id: button_press
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: down
+            sequence:
+              - action: input_number.decrement
+                target:
+                  entity_id: input_number.hot_tub_setpoint
+              - action: timer.start
+                target:
+                  entity_id: timer.hot_tub_temp_timer
+          - conditions:
+              - condition: trigger
+                id: timer_expired
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: down
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.hot_tub_temp_state
+                data:
+                  option: idle
+          - conditions:
+              - condition: trigger
+                id: timer_expired
+              - condition: state
+                entity_id: input_select.hot_tub_temp_state
+                state: down_ready
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.hot_tub_temp_state
+                data:
+                  option: idle
+
+  # ----------------------------------------------------------
+  - id: "1772854387530"
+    alias: "Hot Tub - Auto Mode from ComEd Price"
+    description: >
+      Switches hot tub to Standard mode when ComEd price drops below the standard threshold,
+      and to Sleep mode when price rises above the sleep threshold. Ignores Eco mode.
+      Fires relay button the correct number of times to physically change the mode.
+    mode: single
+    triggers:
+      - id: price_low
+        below: input_number.hot_tub_standard_mode_price_threshold
+        platform: numeric_state
+        entity_id: sensor.comed_5_minute_price
+      - id: price_high
+        above: input_number.hot_tub_sleep_mode_price_threshold
+        platform: numeric_state
+        entity_id: sensor.comed_5_minute_price
+    actions:
+      - choose:
+          - conditions:
+              - id: price_low
+                condition: trigger
+              - state: Sleep
+                condition: state
+                entity_id: input_select.hot_tub_mode
+            sequence:
+              - data:
+                  option: Standard
+                target:
+                  entity_id: input_select.hot_tub_mode
+                action: input_select.select_option
+              - target:
+                  entity_id: switch.hottub_relay_control_mode_change
+                action: switch.turn_on
+              - delay:
+                  milliseconds: 1500
+              - target:
+                  entity_id: switch.hottub_relay_control_mode_change
+                action: switch.turn_on
+              - type: notify
+                title: "🛁 Hot Tub"
+                domain: mobile_app
+                message: "ComEd price dropped to {{ states('sensor.comed_5_minute_price') }}¢. Hot tub switched to Standard mode."
+                device_id: 06bd76fbeaacf125d243daaa84904ed0
+              - type: notify
+                title: "🛁 Hot Tub"
+                domain: mobile_app
+                message: "ComEd price dropped to {{ states('sensor.comed_5_minute_price') }}¢. Hot tub switched to Standard mode."
+                device_id: a9c53a5d2c460eb22abb56fd05f4cddc
+          - conditions:
+              - id: price_high
+                condition: trigger
+              - state: Standard
+                condition: state
+                entity_id: input_select.hot_tub_mode
+            sequence:
+              - data:
+                  option: Sleep
+                target:
+                  entity_id: input_select.hot_tub_mode
+                action: input_select.select_option
+              - target:
+                  entity_id: switch.hottub_relay_control_mode_change
+                action: switch.turn_on
+              - type: notify
+                title: "🛁 Hot Tub"
+                domain: mobile_app
+                message: "ComEd price rose to {{ states('sensor.comed_5_minute_price') }}¢. Hot tub switched to Sleep mode."
+                device_id: 06bd76fbeaacf125d243daaa84904ed0
+              - type: notify
+                title: "🛁 Hot Tub"
+                domain: mobile_app
+                message: "ComEd price rose to {{ states('sensor.comed_5_minute_price') }}¢. Hot tub switched to Sleep mode."
+                device_id: a9c53a5d2c460eb22abb56fd05f4cddc
+
+
+# ============================================================
+# 2. HELPERS
+# ============================================================
+
+# --- input_boolean -------------------------------------------
+input_boolean:
+
+  hot_tub_pump_1:
+    name: Hot Tub Pump 1
+    icon: mdi:pump
+
+  hot_tub_pump_2:
+    name: Hot Tub Pump 2
+    icon: mdi:pump
+
+  hot_tub_light:
+    name: Hot Tub Light
+    icon: mdi:lightbulb
+
+  hot_tub_temp:
+    name: Hot Tub Temp
+    icon: mdi:thermometer
+
+  hot_tub_mode_change:
+    name: Hot Tub Mode Change
+    icon: mdi:dip-switch
+
+
+# --- input_button --------------------------------------------
+input_button:
+
+  hot_tub_temp_button:
+    name: Hot Tub Temp Button
+    icon: mdi:thermometer
+
+
+# --- input_number --------------------------------------------
+input_number:
+
+  hot_tub_setpoint:
+    name: Hot Tub Setpoint
+    icon: mdi:thermometer-water
+    min: 80
+    max: 104
+    step: 1
+    unit_of_measurement: "°F"
+    mode: box
+
+  hot_tub_standard_mode_price_threshold:
+    name: Hot Tub Standard Mode Price Threshold
+    icon: mdi:lightning-bolt-circle
+    min: 0
+    max: 25
+    step: 0.5
+    unit_of_measurement: "¢/kWh"
+    mode: box
+
+  hot_tub_sleep_mode_price_threshold:
+    name: Hot Tub Sleep Mode Price Threshold
+    icon: mdi:lightning-bolt-circle
+    min: 0
+    max: 50
+    step: 0.5
+    unit_of_measurement: "¢/kWh"
+    mode: box
+
+
+# --- input_select --------------------------------------------
+input_select:
+
+  hot_tub_mode:
+    name: Hot Tub Mode
+    icon: mdi:hot-tub
+    options:
+      - Sleep
+      - Eco
+      - Standard
+    initial: Standard
+
+  hot_tub_temp_state:
+    name: Hot Tub Temp State
+    icon: mdi:thermometer-chevron-up
+    options:
+      - idle
+      - up
+      - down_ready
+      - down
+    initial: idle
+
+
+# --- timer ---------------------------------------------------
+timer:
+
+  hot_tub_temp_timer:
+    name: Hot Tub Temp Timer
+    icon: mdi:timer
+    duration: "0:00:05"
+    restore: false
+
+
+# ============================================================
+# 3. DEVICE ENTITIES (reference — not configurable via YAML)
+# ============================================================
+# These entities are provided by integrations/devices and
+# cannot be restored via YAML. Listed here for reference.
+#
+# HotTub Relay Control (ESPHome device)
+#   switches:
+#     switch.hottub_relay_control_pump_1        "HotTub Relay Control Pump 1"
+#     switch.hottub_relay_control_pump_2        "HotTub Relay Control Pump 2"
+#     switch.hottub_relay_control_light         "HotTub Relay Control Light"
+#     switch.hottub_relay_control_temp          "HotTub Relay Control Temp"
+#     switch.hottub_relay_control_mode_change   "HotTub Relay Control Mode Change"
+#   light:
+#     light.hottub_relay_control_rgb_led        "HotTub Relay Control RGB LED"
+#   binary_sensor:
+#     binary_sensor.hottub_relay_control_status "HotTub Relay Control Status"
+#   sensors:
+#     sensor.hottub_relay_control_wifi_signal_db      "HotTub Relay Control WiFi Signal dB"
+#     sensor.hottub_relay_control_wifi_signal_percent "HotTub Relay Control WiFi Signal Percent"
+#   buttons:
+#     button.hottub_relay_control_restart       "HotTub Relay Control Restart"
+#     button.hottub_relay_control_factory_reset "HotTub Relay Control Factory Reset"
+#     button.hottub_relay_control_safe_mode     "HotTub Relay Control Safe Mode"
+#
+# Temperature Sensor (Bluetooth/Zigbee device)
+#   sensor.hot_tub_temperature_sensor_temperature   current: 85.64 °F
+#   sensor.hot_tub_temperature_sensor_battery       current: 100%
+#
+# Hot Tub Heater
+#   binary_sensor.hot_tub_heater_active_2           device_class: heat
+#
+# Derived / Template Sensors
+#   sensor.hot_tub_mode      (mirrors input_select.hot_tub_mode)
+#   sensor.hot_tub_setpoint  (mirrors input_number.hot_tub_setpoint, unit: °F)
+#
+# Emporia Vue Energy Monitoring (circuit 3 = Hot Tub)
+#   sensor.gen3_vue_energy_this_month_3    "Hot tub Energy This Month"     (kWh)
+#   sensor.gen3_vue_energy_today_3         "Hot tub Energy Today"          (kWh)
+#   sensor.gen3_vue_power_minute_average_3 "Hot tub Power Minute Average"  (W)
+#
+# External Integration
+#   sensor.comed_5_minute_price   (used by Auto Mode automation)

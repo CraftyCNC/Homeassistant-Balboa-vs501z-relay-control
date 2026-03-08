@@ -1,0 +1,397 @@
+views:
+  - type: sections
+    title: Hot Tub Controls
+    icon: mdi:hot-tub
+    max_columns: 4
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.hot_tub_temperature_sensor_temperature
+        color: deep-orange
+        name: Water Temp
+    sections:
+      - type: grid
+        column_span: 4
+        cards:
+          - type: heading
+            heading: Power Usage
+            heading_style: title
+            icon: mdi:lightning-bolt
+          - type: tile
+            entity: sensor.gen3_vue_power_minute_average_3
+            name: Current Power
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.gen3_vue_energy_today_3
+            name: Energy Today
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.gen3_vue_energy_this_month_3
+            name: Energy This Month
+            vertical: false
+            features_position: bottom
+      - type: grid
+        column_span: 4
+        cards:
+          - type: heading
+            heading: ComEd Auto Mode
+            heading_style: title
+            icon: mdi:lightning-bolt-circle
+          - type: tile
+            entity: input_number.hot_tub_standard_mode_price_threshold
+            name: → Standard Below (¢)
+            vertical: false
+            features_position: bottom
+            features:
+              - type: numeric-input
+                style: buttons
+          - type: tile
+            entity: input_number.hot_tub_sleep_mode_price_threshold
+            name: → Sleep Above (¢)
+            vertical: false
+            features_position: bottom
+            features:
+              - type: numeric-input
+                style: buttons
+          - type: tile
+            entity: sensor.comed_5_minute_price
+            name: Current Price
+            vertical: false
+            features_position: bottom
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Status
+            heading_style: title
+            icon: mdi:thermometer-water
+          - type: tile
+            entity: sensor.hot_tub_temperature_sensor_temperature
+            name: Water Temperature
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: binary_sensor.hottub_relay_control_status
+            name: Controller Online
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.hottub_relay_control_wifi_signal_percent
+            name: WiFi Signal
+            vertical: false
+            features_position: bottom
+      - type: grid
+        column_span: 4
+        cards:
+          - type: heading
+            heading: Hot Tub Status
+            heading_style: title
+            icon: mdi:information-outline
+          - type: custom:button-card
+            entity: binary_sensor.hot_tub_heater_active_2
+            name: Heater
+            icon: mdi:fire
+            tap_action:
+              action: none
+            styles:
+              icon:
+                - color: >-
+                    [[[return entity.state === 'on' ? 'var(--error-color)' :
+                    'var(--state-icon-color)']]]
+              card:
+                - background: >-
+                    [[[return entity.state === 'on' ? 'rgba(var(--rgb-red),
+                    0.15)' : 'var(--card-background-color)']]]
+                - border: >-
+                    [[[return entity.state === 'on' ? '1px solid
+                    var(--error-color)' : '1px solid var(--divider-color)']]]
+                - border-radius: 8px
+                - padding: 12px 8px
+            grid_options:
+              columns: 4
+              rows: 2
+          - type: custom:button-card
+            entity: sensor.hot_tub_mode
+            name: Mode
+            tap_action:
+              action: none
+            label: '[[[return entity.state]]]'
+            show_label: true
+            show_state: false
+            icon: >-
+              [[[if (entity.state === 'Sleep') return 'mdi:sleep'; if
+              (entity.state === 'Eco') return 'mdi:leaf'; return
+              'mdi:hot-tub';]]]
+            styles:
+              icon:
+                - color: >-
+                    [[[if (entity.state === 'Sleep') return 'var(--info-color)';
+                    if (entity.state === 'Eco') return 'var(--success-color)';
+                    return 'var(--state-icon-active-color)';]]]
+              label:
+                - font-size: 12px
+                - font-weight: bold
+              card:
+                - background: >-
+                    [[[if (entity.state === 'Sleep') return
+                    'rgba(var(--rgb-indigo), 0.15)'; if (entity.state === 'Eco')
+                    return 'rgba(var(--rgb-green), 0.15)'; return
+                    'rgba(var(--color-blue), 0.15)';]]]
+                - border: >-
+                    [[[if (entity.state === 'Sleep') return '1px solid
+                    var(--info-color)'; if (entity.state === 'Eco') return '1px
+                    solid var(--success-color)'; return '1px solid
+                    var(--primary-color)';]]]
+                - border-radius: 8px
+                - padding: 12px 8px
+            grid_options:
+              columns: 4
+              rows: 2
+          - type: custom:button-card
+            entity: sensor.hot_tub_setpoint
+            name: Setpoint
+            tap_action:
+              action: none
+            show_state: true
+            show_label: true
+            label: >-
+              [[[var s = states['input_select.hot_tub_temp_state'].state; if (s
+              === 'up') return '▲ Adjusting Up'; if (s === 'down') return '▼
+              Adjusting Down'; return 'Idle';]]]
+            icon: >-
+              [[[var s = states['input_select.hot_tub_temp_state'].state; if (s
+              === 'up') return 'mdi:thermometer-chevron-up'; if (s === 'down')
+              return 'mdi:thermometer-chevron-down'; return
+              'mdi:thermometer-water';]]]
+            styles:
+              icon:
+                - color: >-
+                    [[[var s = states['input_select.hot_tub_temp_state'].state;
+                    if (s === 'up') return 'var(--error-color)'; if (s ===
+                    'down') return 'var(--info-color)'; return
+                    'var(--state-icon-color)';]]]
+              state:
+                - font-size: 14px
+                - font-weight: bold
+              label:
+                - font-size: 11px
+                - opacity: '0.7'
+              card:
+                - background: >-
+                    [[[var s = states['input_select.hot_tub_temp_state'].state;
+                    if (s === 'up') return 'rgba(var(--rgb-red), 0.1)'; if (s
+                    === 'down') return 'rgba(var(--rgb-blue), 0.1)'; return
+                    'var(--card-background-color)';]]]
+                - border: >-
+                    [[[var s = states['input_select.hot_tub_temp_state'].state;
+                    if (s === 'up') return '1px solid var(--error-color)'; if (s
+                    === 'down') return '1px solid var(--info-color)'; return
+                    '1px solid var(--divider-color)';]]]
+                - border-radius: 8px
+                - padding: 12px 8px
+            grid_options:
+              columns: 4
+              rows: 2
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Pumps
+            heading_style: title
+            icon: mdi:pump
+          - type: custom:button-card
+            entity: input_boolean.hot_tub_pump_1
+            name: Pump 1
+            icon: mdi:pump
+            tap_action:
+              action: toggle
+            styles:
+              icon:
+                - color: >-
+                    [[[return entity.state === 'on' ?
+                    'var(--state-icon-active-color)' :
+                    'var(--state-icon-color)']]]
+              card:
+                - background: >-
+                    [[[return entity.state === 'on' ? 'rgba(var(--color-blue),
+                    0.15)' : 'var(--card-background-color)']]]
+                - border: >-
+                    [[[return entity.state === 'on' ? '1px solid
+                    var(--primary-color)' : '1px solid var(--divider-color)']]]
+                - border-radius: 8px
+                - padding: 12px 8px
+                - opacity: >-
+                    [[[ return
+                    states['binary_sensor.hottub_relay_control_status'].state
+                    !== 'on' ? '0.4' : '1'; ]]]
+            grid_options:
+              columns: 4
+              rows: 2
+            lock:
+              enabled: >-
+                [[[ return
+                states['binary_sensor.hottub_relay_control_status'].state !==
+                'on'; ]]]
+              exemptions: []
+          - type: custom:button-card
+            entity: input_boolean.hot_tub_pump_2
+            name: Pump 2
+            icon: mdi:pump
+            tap_action:
+              action: toggle
+            styles:
+              icon:
+                - color: >-
+                    [[[return entity.state === 'on' ?
+                    'var(--state-icon-active-color)' :
+                    'var(--state-icon-color)']]]
+              card:
+                - background: >-
+                    [[[return entity.state === 'on' ? 'rgba(var(--color-blue),
+                    0.15)' : 'var(--card-background-color)']]]
+                - border: >-
+                    [[[return entity.state === 'on' ? '1px solid
+                    var(--primary-color)' : '1px solid var(--divider-color)']]]
+                - border-radius: 8px
+                - padding: 12px 8px
+                - opacity: >-
+                    [[[ return
+                    states['binary_sensor.hottub_relay_control_status'].state
+                    !== 'on' ? '0.4' : '1'; ]]]
+            grid_options:
+              columns: 4
+              rows: 2
+            lock:
+              enabled: >-
+                [[[ return
+                states['binary_sensor.hottub_relay_control_status'].state !==
+                'on'; ]]]
+              exemptions: []
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Lighting
+            heading_style: title
+            icon: mdi:lightbulb
+          - type: custom:button-card
+            entity: input_boolean.hot_tub_light
+            name: Light
+            icon: mdi:lightbulb
+            tap_action:
+              action: toggle
+            styles:
+              icon:
+                - color: >-
+                    [[[return entity.state === 'on' ?
+                    'var(--state-icon-active-color)' :
+                    'var(--state-icon-color)']]]
+              card:
+                - background: >-
+                    [[[return entity.state === 'on' ? 'rgba(var(--color-blue),
+                    0.15)' : 'var(--card-background-color)']]]
+                - border: >-
+                    [[[return entity.state === 'on' ? '1px solid
+                    var(--primary-color)' : '1px solid var(--divider-color)']]]
+                - border-radius: 8px
+                - padding: 12px 8px
+                - opacity: >-
+                    [[[ return
+                    states['binary_sensor.hottub_relay_control_status'].state
+                    !== 'on' ? '0.4' : '1'; ]]]
+            grid_options:
+              columns: 4
+              rows: 2
+            lock:
+              enabled: >-
+                [[[ return
+                states['binary_sensor.hottub_relay_control_status'].state !==
+                'on'; ]]]
+              exemptions: []
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Controls
+            heading_style: title
+            icon: mdi:dip-switch
+          - type: custom:button-card
+            entity: input_button.hot_tub_temp_button
+            name: Temp
+            icon: mdi:thermometer
+            tap_action:
+              action: call-service
+              service: input_button.press
+              service_data:
+                entity_id: input_button.hot_tub_temp_button
+            styles:
+              icon:
+                - color: >-
+                    [[[var s = states['input_select.hot_tub_temp_state'].state;
+                    if (s === 'up') return 'var(--error-color)'; if (s ===
+                    'down') return 'var(--info-color)'; return
+                    'var(--state-icon-color)';]]]
+              card:
+                - background: >-
+                    [[[var s = states['input_select.hot_tub_temp_state'].state;
+                    if (s === 'up') return 'rgba(var(--rgb-red), 0.1)'; if (s
+                    === 'down') return 'rgba(var(--rgb-blue), 0.1)'; return
+                    'var(--card-background-color)';]]]
+                - border: >-
+                    [[[var s = states['input_select.hot_tub_temp_state'].state;
+                    if (s === 'up') return '1px solid var(--error-color)'; if (s
+                    === 'down') return '1px solid var(--info-color)'; return
+                    '1px solid var(--divider-color)';]]]
+                - border-radius: 8px
+                - padding: 12px 8px
+                - opacity: >-
+                    [[[ return
+                    states['binary_sensor.hottub_relay_control_status'].state
+                    !== 'on' ? '0.4' : '1'; ]]]
+            grid_options:
+              columns: 4
+              rows: 2
+            lock:
+              enabled: >-
+                [[[ return
+                states['binary_sensor.hottub_relay_control_status'].state !==
+                'on'; ]]]
+              exemptions: []
+          - type: custom:button-card
+            entity: input_boolean.hot_tub_mode_change
+            name: Mode Change
+            icon: mdi:dip-switch
+            tap_action:
+              action: toggle
+            styles:
+              icon:
+                - color: >-
+                    [[[return entity.state === 'on' ?
+                    'var(--state-icon-active-color)' :
+                    'var(--state-icon-color)']]]
+              card:
+                - background: >-
+                    [[[return entity.state === 'on' ? 'rgba(var(--color-blue),
+                    0.15)' : 'var(--card-background-color)']]]
+                - border: >-
+                    [[[return entity.state === 'on' ? '1px solid
+                    var(--primary-color)' : '1px solid var(--divider-color)']]]
+                - border-radius: 8px
+                - padding: 12px 8px
+                - opacity: >-
+                    [[[ return
+                    states['binary_sensor.hottub_relay_control_status'].state
+                    !== 'on' ? '0.4' : '1'; ]]]
+            grid_options:
+              columns: 4
+              rows: 2
+            lock:
+              enabled: >-
+                [[[ return
+                states['binary_sensor.hottub_relay_control_status'].state !==
+                'on'; ]]]
+              exemptions: []

@@ -1,0 +1,213 @@
+esphome:
+  name: hottub-relay-control
+  friendly_name: HotTub Relay Control
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "enter your key"
+
+ota:
+  - platform: esphome
+    password: "xxxxx"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Hottub-Relay-Control"
+    password: "xxxxx"
+
+captive_portal:
+    
+
+web_server:
+  port: 80
+
+bluetooth_proxy:
+  active: true
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+binary_sensor:
+  - platform: status
+    name: "Status"
+
+  - platform: gpio
+    name: "Boot Button"
+    pin:
+      number: 0
+      ignore_strapping_warning: true
+      mode:
+        input: true
+      inverted: true
+    disabled_by_default: true
+    on_press:
+      then:
+        - button.press: restart_button
+
+sensor:
+  # Example configuration entry with 2 sensors and filter
+
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db_house
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db_house
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
+
+
+output:
+  - platform: gpio
+    pin: GPIO1
+    id: light_key  # Light
+ #   name: Relay 1
+  - platform: gpio
+    pin: GPIO2
+    id: temp_key  # Temp
+  #  name: Relay 2
+  - platform: gpio
+    pin: GPIO41
+    id: pump1_key # Jet1
+  #  name: Relay 3
+  - platform: gpio
+    pin: GPIO42
+    id: pump2_key  #Jet 2
+  #  name: Relay 4
+  - platform: gpio
+    pin:
+      number: GPIO45
+      ignore_strapping_warning: true
+    id: relay5   # Unused
+  #  name: Relay 5
+  - platform: gpio
+    pin:
+      number: GPIO46
+      ignore_strapping_warning: true
+    id: relay6    # Unused
+  #  name: Relay 6
+ # buzzer
+  - platform: ledc
+    pin: GPIO21
+    id: buzzer   
+
+
+switch:
+- platform: template
+  name: "Mode Change"
+  id: mode_switch
+  turn_on_action:
+    - output.turn_on: temp_key
+    - delay: .2s
+    - output.turn_off: temp_key
+    - delay:  .5s
+    - output.turn_on: light_key
+    - delay: .2s
+    - output.turn_off: light_key
+    - switch.turn_off: mode_switch
+  turn_off_action:
+    - output.turn_off: temp_key
+    - output.turn_off: light_key
+
+- platform: template
+  name: "Light"
+  id: light_switch
+  turn_on_action:
+    - output.turn_on: light_key
+    - delay: .2s
+    - output.turn_off: light_key
+    - switch.turn_off: light_switch
+  turn_off_action:
+    - output.turn_off: light_key
+- platform: template
+  name: "Temp"
+  id: temp_switch
+  turn_on_action:
+    - output.turn_on: temp_key
+    - delay: .2s
+    - output.turn_off: temp_key
+    - switch.turn_off: temp_switch
+  turn_off_action:
+    - output.turn_off: temp_key
+- platform: template
+  name: "Pump 1"
+  id: pump1_switch
+  turn_on_action:
+    - output.turn_on: pump1_key
+    - delay: .2s
+    - output.turn_off: pump1_key
+    - switch.turn_off: pump1_switch
+  turn_off_action:
+    - output.turn_off: pump1_key
+- platform: template
+  name: "Pump 2"
+  id: pump2_switch
+  turn_on_action:
+    - output.turn_on: pump2_key
+    - delay: .2s
+    - output.turn_off: pump2_key
+    - switch.turn_off: pump2_switch
+  turn_off_action:
+    - output.turn_off: pump2_key
+
+
+
+
+
+uart:
+  tx_pin: GPIO17
+  rx_pin: GPIO18
+  baud_rate: 9600
+  id: modbus_uart
+
+
+
+rtttl:
+  output: buzzer
+  id: rtttl_buzzer
+  gain: 30%
+
+light:
+  - platform: esp32_rmt_led_strip
+    chipset: ws2812
+    pin: GPIO38
+    num_leds: 1
+    rgb_order: RGB
+    name: "RGB LED"
+    id: rgb_led
+
+button:
+  - platform: restart
+    name: "Restart"
+    id: restart_button
+    entity_category: config
+
+  - platform: factory_reset
+    name: "Factory Reset"
+    id: reset
+    entity_category: config
+
+  - platform: safe_mode
+    name: "Safe Mode"
+    internal: false
+    entity_category: config    
